@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompTIA Security+ SY0-701 - PBQ Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="exam-header">
+        <h1>CompTIA Security+ (SY0-701) - Performance-Based Question</h1>
+        <div id="timer">Tiempo restante: 90:00</div>
+    </header>
+
+    <main class="pbq-container">
+        <!-- Instrucciones tácticas del escenario -->
+        <section class="instructions">
+            <h2>Escenario PBQ 1: Selección e Implementación de Controles en Red Perimetral</h2>
+            <p><strong>Instrucciones:</strong> Arrastre los controles de seguridad y dispositivos adecuados desde la sección de recursos hacia las zonas de arquitectura correspondientes para mitigar los vectores de ataque identificados, garantizando la menor latencia y cumplimiento del principio de menor privilegio.</p>
+        </section>
+
+        <!-- Contenedor Principal Interactiva -->
+        <div class="interactive-area">
+            <!-- Banco de Elementos (Drag Sources) -->
+            <div class="source-panel">
+                <h3>Componentes / Controles</h3>
+                <div class="draggable-items" id="draggable-container">
+                    <div class="draggable" draggable="true" id="item-waf" data-control="WAF">WAF (Web Application Firewall)</div>
+                    <div class="draggable" draggable="true" id="item-ngfw" data-control="NGFW">NGFW (Next-Gen Firewall)</div>
+                    <div class="draggable" draggable="true" id="item-mfa" data-control="MFA">MFA (Multi-Factor Auth)</div>
+                    <div class="draggable" draggable="true" id="item-jump" data-control="JUMPBOX">Jump Server / Bastion Host</div>
+                    <div class="draggable" draggable="true" id="item-dlp" data-control="DLP">DLP (Data Loss Prevention)</div>
+                </div>
+            </div>
+
+            <!-- Arquitectura / Zonas de Solución (Drop Targets) -->
+            <div class="target-panel">
+                <h3>Arquitectura de Red Corporativa</h3>
+                
+                <div class="drop-zone" data-zone="dmz">
+                    <span class="zone-label">DMZ (Servidores Web Públicos - HTTP/HTTPS):</span>
+                    <div class="slot" id="slot-dmz"></div>
+                </div>
+
+                <div class="drop-zone" data-zone="perimeter">
+                    <span class="zone-label">Perímetro de Red / Borde (Filtrado Capa 4/7):</span>
+                    <div class="slot" id="slot-perimeter"></div>
+                </div>
+
+                <div class="drop-zone" data-zone="management">
+                    <span class="zone-label">Acceso de Administración Remota a Subredes Internas:</span>
+                    <div class="slot" id="slot-management"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Control y Salida -->
+        <div class="action-panel">
+            <button id="btn-submit" class="btn">Enviar Respuestas</button>
+            <button id="btn-reset" class="btn btn-secondary">Reiniciar PBQ</button>
+        </div>
+
+        <div id="feedback-panel" class="feedback-panel hidden"></div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
