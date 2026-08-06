@@ -1,4 +1,3 @@
-// Banco de datos de PBQs (Escalable a N preguntas)
 const pbqData = [
   {
     id: 1,
@@ -40,6 +39,65 @@ const pbqData = [
       'wan_interface': 'FW_EXT',
       'lan_interface': 'NIPS'
     }
+  },
+  {
+    id: 3,
+    title: "Escenario PBQ 3: Mitigación de Evasión y Comunicaciones C2 (APT Scenario)",
+    instructions: "Asocie la evidencia técnica identificada en el host/red con el control o contramedida táctica correspondiente.",
+    draggables: [
+      { id: "item-ndr", control: "NDR", text: "Inspección NDR / Análisis de Entropía Temporal" },
+      { id: "item-driver", control: "BLOCKLIST", text: "Driver Blocklist (HVCI / Credential Guard)" },
+      { id: "item-ram", control: "INSPECTION", text: "Inspección de Memoria (AMSI / Process Injection)" },
+      { id: "item-isolation", control: "ISOLATION", text: "Aislamiento de Host (Host Isolation)" }
+    ],
+    zones: [
+      { key: "beaconing", label: "Conexiones HTTPS salientes en intervalos exactos de 15 min (C2):" },
+      { key: "byovd", label: "Carga de driver vulnerable para deshabilitar el agente EDR (BYOVD):" },
+      { key: "fileless", label: "Inyección de código malicioso residente solo en RAM (Fileless):" }
+    ],
+    solution: {
+      'beaconing': 'NDR',
+      'byovd': 'BLOCKLIST',
+      'fileless': 'INSPECTION'
+    }
+  },
+  {
+    id: 4,
+    title: "Escenario PBQ 4: Aseguramiento de Infraestructura Inalámbrica Corporativa",
+    instructions: "Seleccione los mecanismos de autenticación y cifrado requeridos para mitigar accesos no autorizados y Rogue APs en la red Wi-Fi.",
+    draggables: [
+      { id: "item-wpa3-ent", control: "WPA3_ENT", text: "WPA3-Enterprise (802.1X + EAP-TLS)" },
+      { id: "item-radius", control: "RADIUS", text: "Servidor RADIUS / AAA" },
+      { id: "item-preshared", control: "PSK", text: "WPA2-Personal (Pre-Shared Key)" },
+      { id: "item-captive", control: "CAPTIVE", text: "Captive Portal con Aislamiento de Clientes" }
+    ],
+    zones: [
+      { key: "wifi_corp", label: "Red Wi-Fi Empleados (Autenticación basada en certificados digitales):" },
+      { key: "wifi_guests", label: "Red Wi-Fi Visitantes (Acceso temporal aislado de la red LAN):" }
+    ],
+    solution: {
+      'wifi_corp': 'WPA3_ENT',
+      'wifi_guests': 'CAPTIVE'
+    }
+  },
+  {
+    id: 5,
+    title: "Escenario PBQ 5: Gestión de Certificados Digitales y Cadena de Confianza PKI",
+    instructions: "Asigne la solución tecnológica correcta para garantizar la validación de certificados y evitar interrupciones por revocación.",
+    draggables: [
+      { id: "item-ocsp", control: "OCSP_STAPLING", text: "OCSP Stapling (Mitigación de latencia y privacidad)" },
+      { id: "item-crl", control: "CRL", text: "Certificate Revocation List (CRL)" },
+      { id: "item-csr", control: "CSR", text: "Certificate Signing Request (CSR)" },
+      { id: "item-ca-root", control: "ROOT_CA", text: "Root CA Offline" }
+    ],
+    zones: [
+      { key: "cert_revocation", label: "Prueba de validez del certificado sin consultar la CA en cada petición:" },
+      { key: "ca_protection", label: "Componente de la PKI que debe mantenerse desconectado:" }
+    ],
+    solution: {
+      'cert_revocation': 'OCSP_STAPLING',
+      'ca_protection': 'ROOT_CA'
+    }
   }
 ];
 
@@ -53,14 +111,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-reset').addEventListener('click', () => loadPbq(currentPbqIndex));
 });
 
-// Renderizar botones de navegación entre PBQs
 function initPbqNav() {
     const navContainer = document.getElementById('pbq-selector');
     if (!navContainer) return;
     
     navContainer.innerHTML = pbqData.map((pbq, index) => 
-        `<button class="btn-nav ${index === 0 ? 'active' : ''}" onclick="switchPbq(${index})">PBQ ${pbq.id}</button>`
+        `<button class="btn-nav ${index === 0 ? 'active' : ''}" data-index="${index}">PBQ ${pbq.id}</button>`
     ).join('');
+
+    navContainer.querySelectorAll('.btn-nav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            switchPbq(index);
+        });
+    });
 }
 
 function switchPbq(index) {
@@ -71,25 +135,20 @@ function switchPbq(index) {
     loadPbq(index);
 }
 
-// Cargar la PBQ dinámicamente en el DOM
 function loadPbq(index) {
     const pbq = pbqData[index];
     
-    // Ocultar feedback anterior
     const feedbackPanel = document.getElementById('feedback-panel');
     feedbackPanel.className = 'feedback-panel hidden';
 
-    // Setear Textos
     document.getElementById('pbq-title').innerText = pbq.title;
     document.getElementById('pbq-instructions').innerText = pbq.instructions;
 
-    // Renderizar Draggables
     const dragContainer = document.getElementById('draggable-container');
     dragContainer.innerHTML = pbq.draggables.map(item => 
         `<div class="draggable" draggable="true" id="${item.id}" data-control="${item.control}">${item.text}</div>`
     ).join('');
 
-    // Renderizar DropZones
     const targetPanel = document.getElementById('target-panel');
     targetPanel.innerHTML = `<h3>Zonas de Arquitectura</h3>` + pbq.zones.map(zone => 
         `<div class="drop-zone" data-zone="${zone.key}">
@@ -98,7 +157,6 @@ function loadPbq(index) {
          </div>`
     ).join('');
 
-    // Rebindear Eventos de Drag & Drop
     attachDragAndDropEvents();
 }
 
@@ -130,15 +188,16 @@ function attachDragAndDropEvents() {
             const draggableElement = document.getElementById(id);
             const slot = zone.querySelector('.slot');
 
-            if (slot.children.length > 0) {
-                document.getElementById('draggable-container').appendChild(slot.children[0]);
+            if (draggableElement && slot) {
+                if (slot.children.length > 0) {
+                    document.getElementById('draggable-container').appendChild(slot.children[0]);
+                }
+                slot.appendChild(draggableElement);
             }
-            slot.appendChild(draggableElement);
         });
     });
 }
 
-// Evaluación Dinámica por Pregunta
 function evaluateCurrentPbq() {
     const pbq = pbqData[currentPbqIndex];
     const dropZones = document.querySelectorAll('.drop-zone');
@@ -168,7 +227,7 @@ function evaluateCurrentPbq() {
     feedbackPanel.classList.remove('hidden', 'success', 'error');
     if (score === total) {
         feedbackPanel.classList.add('success');
-        feedbackPanel.innerHTML = `<strong>¡Resultado Perfecto! (${score}/${total})</strong><br>Alineación correcta según el estándar de CompTIA Security+.`;
+        feedbackPanel.innerHTML = `<strong>¡Resultado Perfecto! (${score}/${total})</strong><br>Alineación correcta según el marco de CompTIA Security+.`;
     } else {
         feedbackPanel.classList.add('error');
         feedbackPanel.innerHTML = `<strong>Evaluación Incorrecta (${score}/${total})</strong><ul>${feedbackDetails.map(item => `<li>${item}</li>`).join('')}</ul>`;
