@@ -107,17 +107,22 @@ document.addEventListener('DOMContentLoaded', () => {
     initPbqNav();
     loadPbq(currentPbqIndex);
 
-    document.getElementById('btn-submit').addEventListener('click', evaluateCurrentPbq);
-    document.getElementById('btn-reset').addEventListener('click', () => loadPbq(currentPbqIndex));
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnReset = document.getElementById('btn-reset');
+
+    if (btnSubmit) btnSubmit.addEventListener('click', evaluateCurrentPbq);
+    if (btnReset) btnReset.addEventListener('click', () => loadPbq(currentPbqIndex));
 });
 
 function initPbqNav() {
     const navContainer = document.getElementById('pbq-selector');
     if (!navContainer) return;
     
-    navContainer.innerHTML = pbqData.map((pbq, index) => 
-        `<button class="btn-nav ${index === 0 ? 'active' : ''}" data-index="${index}">PBQ ${pbq.id}</button>`
-    ).join('');
+    let html = '';
+    for (let i = 0; i < pbqData.length; i++) {
+        html += `<button class="btn-nav ${i === currentPbqIndex ? 'active' : ''}" data-index="${i}">PBQ ${pbqData[i].id}</button>`;
+    }
+    navContainer.innerHTML = html;
 
     navContainer.querySelectorAll('.btn-nav').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -129,8 +134,10 @@ function initPbqNav() {
 
 function switchPbq(index) {
     currentPbqIndex = index;
-    document.querySelectorAll('.btn-nav').forEach((btn, i) => {
-        btn.classList.toggle('active', i === index);
+    const buttons = document.querySelectorAll('.btn-nav');
+    buttons.forEach((btn, i) => {
+        if (i === index) btn.classList.add('active');
+        else btn.classList.remove('active');
     });
     loadPbq(index);
 }
@@ -139,37 +146,44 @@ function loadPbq(index) {
     const pbq = pbqData[index];
     
     const feedbackPanel = document.getElementById('feedback-panel');
-    feedbackPanel.className = 'feedback-panel hidden';
+    if (feedbackPanel) feedbackPanel.className = 'feedback-panel hidden';
 
-    document.getElementById('pbq-title').innerText = pbq.title;
-    document.getElementById('pbq-instructions').innerText = pbq.instructions;
+    const titleEl = document.getElementById('pbq-title');
+    const instEl = document.getElementById('pbq-instructions');
+    
+    if (titleEl) titleEl.innerText = pbq.title;
+    if (instEl) instEl.innerText = pbq.instructions;
 
     const dragContainer = document.getElementById('draggable-container');
-    dragContainer.innerHTML = pbq.draggables.map(item => 
-        `<div class="draggable" draggable="true" id="${item.id}" data-control="${item.control}">${item.text}</div>`
-    ).join('');
+    if (dragContainer) {
+        dragContainer.innerHTML = pbq.draggables.map(item => 
+            `<div class="draggable" draggable="true" id="${item.id}" data-control="${item.control}">${item.text}</div>`
+        ).join('');
+    }
 
     const targetPanel = document.getElementById('target-panel');
-    targetPanel.innerHTML = `<h3>Zonas de Arquitectura</h3>` + pbq.zones.map(zone => 
-        `<div class="drop-zone" data-zone="${zone.key}">
-            <span class="zone-label">${zone.label}</span>
-            <div class="slot" id="slot-${zone.key}"></div>
-         </div>`
-    ).join('');
+    if (targetPanel) {
+        targetPanel.innerHTML = `<h3>Zonas de Arquitectura</h3>` + pbq.zones.map(zone => 
+            `<div class="drop-zone" data-zone="${zone.key}">
+                <span class="zone-label">${zone.label}</span>
+                <div class="slot" id="slot-${zone.key}"></div>
+             </div>`
+        ).join('');
+    }
 
-    attachDragAndDropEvents();
+    attachEvents();
 }
 
-function attachDragAndDropEvents() {
+function attachEvents() {
     const draggables = document.querySelectorAll('.draggable');
     const dropZones = document.querySelectorAll('.drop-zone');
 
-    draggables.forEach(draggable => {
-        draggable.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', draggable.id);
-            draggable.classList.add('dragging');
+    draggables.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', item.id);
+            item.classList.add('dragging');
         });
-        draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
     });
 
     dropZones.forEach(zone => {
@@ -210,7 +224,7 @@ function evaluateCurrentPbq() {
     dropZones.forEach(zone => {
         const zoneKey = zone.getAttribute('data-zone');
         const slot = zone.querySelector('.slot');
-        const placedElement = slot.children[0];
+        const placedElement = slot ? slot.children[0] : null;
 
         if (placedElement) {
             const placedControl = placedElement.getAttribute('data-control');
@@ -224,12 +238,14 @@ function evaluateCurrentPbq() {
         }
     });
 
-    feedbackPanel.classList.remove('hidden', 'success', 'error');
-    if (score === total) {
-        feedbackPanel.classList.add('success');
-        feedbackPanel.innerHTML = `<strong>¡Resultado Perfecto! (${score}/${total})</strong><br>Alineación correcta según el marco de CompTIA Security+.`;
-    } else {
-        feedbackPanel.classList.add('error');
-        feedbackPanel.innerHTML = `<strong>Evaluación Incorrecta (${score}/${total})</strong><ul>${feedbackDetails.map(item => `<li>${item}</li>`).join('')}</ul>`;
+    if (feedbackPanel) {
+        feedbackPanel.classList.remove('hidden', 'success', 'error');
+        if (score === total) {
+            feedbackPanel.classList.add('success');
+            feedbackPanel.innerHTML = `<strong>¡Resultado Perfecto! (${score}/${total})</strong><br>Alineación correcta según el marco de CompTIA Security+.`;
+        } else {
+            feedbackPanel.classList.add('error');
+            feedbackPanel.innerHTML = `<strong>Evaluación Incorrecta (${score}/${total})</strong><ul>${feedbackDetails.map(item => `<li>${item}</li>`).join('')}</ul>`;
+        }
     }
 }
