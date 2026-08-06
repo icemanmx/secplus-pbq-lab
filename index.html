@@ -1,68 +1,96 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CompTIA Security+ SY0-701 - PBQ Simulator</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header class="exam-header">
-        <h1>CompTIA Security+ (SY0-701) - Performance-Based Question</h1>
-        <div id="timer">Tiempo restante: 90:00</div>
-    </header>
+document.addEventListener('DOMContentLoaded', () => {
+    const draggables = document.querySelectorAll('.draggable');
+    const dropZones = document.querySelectorAll('.drop-zone');
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnReset = document.getElementById('btn-reset');
+    const feedbackPanel = document.getElementById('feedback-panel');
 
-    <main class="pbq-container">
-        <!-- Instrucciones tácticas del escenario -->
-        <section class="instructions">
-            <h2>Escenario PBQ 1: Selección e Implementación de Controles en Red Perimetral</h2>
-            <p><strong>Instrucciones:</strong> Arrastre los controles de seguridad y dispositivos adecuados desde la sección de recursos hacia las zonas de arquitectura correspondientes para mitigar los vectores de ataque identificados, garantizando la menor latencia y cumplimiento del principio de menor privilegio.</p>
-        </section>
+    // Mapeo oficial de solución (SY0-701 Objetivos 1.2, 3.2, 4.5)
+    const CORRECT_SOLUTION = {
+        'dmz': 'WAF',          // Aplicaciones Web en DMZ frente a XSS/SQLi
+        'perimeter': 'NGFW',   // Inspección profunda de tráfico y control de puertos Layer 4/7
+        'management': 'JUMPBOX'// Bastión de administración para aislar entornos y accesos de gestión
+    };
 
-        <!-- Contenedor Principal Interactiva -->
-        <div class="interactive-area">
-            <!-- Banco de Elementos (Drag Sources) -->
-            <div class="source-panel">
-                <h3>Componentes / Controles</h3>
-                <div class="draggable-items" id="draggable-container">
-                    <div class="draggable" draggable="true" id="item-waf" data-control="WAF">WAF (Web Application Firewall)</div>
-                    <div class="draggable" draggable="true" id="item-ngfw" data-control="NGFW">NGFW (Next-Gen Firewall)</div>
-                    <div class="draggable" draggable="true" id="item-mfa" data-control="MFA">MFA (Multi-Factor Auth)</div>
-                    <div class="draggable" draggable="true" id="item-jump" data-control="JUMPBOX">Jump Server / Bastion Host</div>
-                    <div class="draggable" draggable="true" id="item-dlp" data-control="DLP">DLP (Data Loss Prevention)</div>
-                </div>
-            </div>
+    // Eventos Drag and Drop
+    draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', draggable.id);
+            draggable.classList.add('dragging');
+        });
 
-            <!-- Arquitectura / Zonas de Solución (Drop Targets) -->
-            <div class="target-panel">
-                <h3>Arquitectura de Red Corporativa</h3>
-                
-                <div class="drop-zone" data-zone="dmz">
-                    <span class="zone-label">DMZ (Servidores Web Públicos - HTTP/HTTPS):</span>
-                    <div class="slot" id="slot-dmz"></div>
-                </div>
+        draggable.addEventListener('dragend', () => {
+            draggable.classList.remove('dragging');
+        });
+    });
 
-                <div class="drop-zone" data-zone="perimeter">
-                    <span class="zone-label">Perímetro de Red / Borde (Filtrado Capa 4/7):</span>
-                    <div class="slot" id="slot-perimeter"></div>
-                </div>
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
 
-                <div class="drop-zone" data-zone="management">
-                    <span class="zone-label">Acceso de Administración Remota a Subredes Internas:</span>
-                    <div class="slot" id="slot-management"></div>
-                </div>
-            </div>
-        </div>
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
 
-        <!-- Panel de Control y Salida -->
-        <div class="action-panel">
-            <button id="btn-submit" class="btn">Enviar Respuestas</button>
-            <button id="btn-reset" class="btn btn-secondary">Reiniciar PBQ</button>
-        </div>
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            
+            const id = e.dataTransfer.getData('text/plain');
+            const draggableElement = document.getElementById(id);
+            const slot = zone.querySelector('.slot');
 
-        <div id="feedback-panel" class="feedback-panel hidden"></div>
-    </main>
+            // Si la zona ya tiene un elemento, regresarlo al contenedor principal
+            if (slot.children.length > 0) {
+                document.getElementById('draggable-container').appendChild(slot.children[0]);
+            }
 
-    <script src="app.js"></script>
-</body>
-</html>
+            slot.appendChild(draggableElement);
+        });
+    });
+
+    // Evaluación Táctica
+    btnSubmit.addEventListener('click', () => {
+        let score = 0;
+        let total = Object.keys(CORRECT_SOLUTION).length;
+        let feedbackDetails = [];
+
+        dropZones.forEach(zone => {
+            const zoneKey = zone.getAttribute('data-zone');
+            const slot = zone.querySelector('.slot');
+            const placedElement = slot.children[0];
+
+            if (placedElement) {
+                const placedControl = placedElement.getAttribute('data-control');
+                if (placedControl === CORRECT_SOLUTION[zoneKey]) {
+                    score++;
+                } else {
+                    feedbackDetails.push(`Error en zona [${zoneKey.toUpperCase()}]: Se colocó '${placedControl}', pero la arquitectura oficial requiere '${CORRECT_SOLUTION[zoneKey]}'.`);
+                }
+            } else {
+                feedbackDetails.push(`La zona [${zoneKey.toUpperCase()}] se encuentra vacía.`);
+            }
+        });
+
+        // Mostrar Panel de Resultados
+        feedbackPanel.classList.remove('hidden', 'success', 'error');
+        if (score === total) {
+            feedbackPanel.classList.add('success');
+            feedbackPanel.innerHTML = `<strong>¡Resultado Perfecto! (${score}/${total})</strong><br>Has alineado correctamente la arquitectura de controles según el marco CompTIA Security+ SY0-701.`;
+        } else {
+            feedbackPanel.classList.add('error');
+            feedbackPanel.innerHTML = `<strong>Evaluación Incorrecta (${score}/${total})</strong><br>Revisa los siguientes puntos tácticos:<br><ul>${feedbackDetails.map(item => `<li>${item}</li>`).join('')}</ul>`;
+        }
+    });
+
+    // Reinicio del Estado
+    btnReset.addEventListener('click', () => {
+        const draggableContainer = document.getElementById('draggable-container');
+        draggables.forEach(draggable => {
+            draggableContainer.appendChild(draggable);
+        });
+        feedbackPanel.classList.add('hidden');
+    });
+});
